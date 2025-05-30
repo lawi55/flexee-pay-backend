@@ -31,6 +31,11 @@ const Objectif = sequelize.define(
       type: DataTypes.FLOAT,
       allowNull: false,
     },
+    progress: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0.0,
+    },
     date_debut: {
       type: DataTypes.DATE,
       allowNull: false,

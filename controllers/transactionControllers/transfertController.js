@@ -63,6 +63,12 @@ exports.createTransfert = async (req, res) => {
       id_jeune,
     });
 
+    await Transfert.create({
+      id: transactionJeune.id, // Le transfert utilise l'ID de la transaction parent
+      id_parent,
+      id_jeune,
+    });
+
     await Notification.create({
       userId: id_jeune,
       type: "Transfert",

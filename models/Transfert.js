@@ -1,6 +1,9 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Transaction = require("./Transaction");
+const Jeune = require("./Jeune");
+const Parent = require("./Parent");
+
 
 const Transfert = sequelize.define("Transfert", {
   id: {
@@ -14,14 +17,14 @@ const Transfert = sequelize.define("Transfert", {
   id_parent: {
     type: DataTypes.UUID,
     references: {
-      model: "Parents", // Reference to Parent table
+      model: Parent,
       key: "id",
     },
   },
   id_jeune: {
     type: DataTypes.UUID,
     references: {
-      model: "Jeunes", // Reference to Jeune table
+      model: Jeune,
       key: "id",
     },
   },
@@ -33,5 +36,9 @@ const Transfert = sequelize.define("Transfert", {
 
 Transaction.hasOne(Transfert, { foreignKey: "id", onDelete: "CASCADE" });
 Transfert.belongsTo(Transaction, { foreignKey: "id" });
+Transfert.belongsTo(Parent, {foreignKey: "id_parent"});
+Transfert.belongsTo(Jeune, {foreignKey: "id_jeune"});
+
+
 
 module.exports = Transfert;

@@ -1,6 +1,6 @@
 const Tirelire = require("../models/Tirelire");
 const Compte = require("../models/Compte");
-
+const Objectif = require("../models/Objectif");
 
 exports.getMyTirelire = async (req, res) => {
   try {
@@ -66,6 +66,71 @@ exports.transferFromCompte = async (req, res) => {
 
     await compte.save();
     await tirelire.save();
+
+    // NEW: Objectives progress update
+    const activeObjectives = await Objectif.findAll({
+      where: {
+        id_tirelire: tirelire.id,
+        statut: "En cours",
+      },
+    });
+
+    for (const objective of activeObjectives) {
+      await objective.update({
+        progress: (objective.progress += montant),
+      });
+      await objective.save();
+    }
+
+    return res.status(200).json({ message: "Transfert réussi" });
+  } catch (error) {
+    console.error("Erreur transfert vers tirelire:", error);
+    return res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
+exports.transferToCompte = async (req, res) => {
+  const { montant } = req.body;
+  const userId = req.user.id;
+
+  if (!montant || isNaN(montant) || montant <= 0) {
+    return res.status(400).json({ message: "Montant invalide" });
+  }
+
+  try {
+    const compte = await Compte.findOne({ where: { userId } });
+    const tirelire = await Tirelire.findOne({
+      where: { userId },
+    });
+
+    if (!compte || !tirelire) {
+      return res.status(404).json({ message: "Comptes non trouvés" });
+    }
+
+    if (compte.solde < montant) {
+      return res.status(400).json({ message: "Solde insuffisant" });
+    }
+
+    compte.solde += montant;
+    tirelire.solde -= montant;
+
+    await compte.save();
+    await tirelire.save();
+
+    // NEW: Objectives progress update
+    const activeObjectives = await Objectif.findAll({
+      where: {
+        id_tirelire: tirelire.id,
+        statut: "En cours",
+      },
+    });
+
+    for (const objective of activeObjectives) {
+      await objective.update({
+        progress: (objective.progress -= montant),
+      });
+      await objective.save();
+    }
 
     return res.status(200).json({ message: "Transfert réussi" });
   } catch (error) {

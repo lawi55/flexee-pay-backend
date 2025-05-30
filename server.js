@@ -22,6 +22,7 @@ const objectifRoutes = require("./routes/objectifRoutes");
 const cashbackRoutes = require("./routes/cashbackRoutes");
 const notificationRoutes = require('./routes/notificationRoutes');
 const badgeRoutes = require('./routes/badgeRoutes');
+const alimentationRoutes = require("./routes/alimentationRoutes");
 
 
 
@@ -61,6 +62,7 @@ app.use("/objectif", objectifRoutes);
 app.use("/cashback", cashbackRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/badge', badgeRoutes);
+app.use("/alimentation", alimentationRoutes);
 
 
 
@@ -99,7 +101,7 @@ app.set("connectedUsers", connectedUsers);
 
 // Database sync
 sequelize
-  .sync({ force: false })
+  .sync({ alter: true })
   .then(() => console.log("✅ Database synced successfully!"))
   .catch((err) => console.error("❌ Error syncing database:", err));
 

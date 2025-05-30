@@ -17,7 +17,13 @@ const Transaction = sequelize.define("Transaction", {
     },
   },
   type_transaction: {
-    type: DataTypes.ENUM("Paiement", "Transfert", "Recharge", "Demande"),
+    type: DataTypes.ENUM(
+      "Paiement",
+      "Transfert",
+      "Recharge",
+      "Demande",
+      "Alimentation"
+    ),
     allowNull: false,
   },
   montant: {

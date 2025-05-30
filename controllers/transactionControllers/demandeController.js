@@ -19,8 +19,7 @@ exports.createDemande = async (req, res) => {
       return res.status(404).json({ message: "Compte du jeune non trouvé." });
     }
 
-    const jeune = await Utilisateur.findOne({where: {id: id_jeune}});
-
+    const jeune = await Utilisateur.findOne({ where: { id: id_jeune } });
     const transaction = await Transaction.create({
       compteId: compte.id,
       type_transaction: "Demande",
@@ -107,7 +106,7 @@ exports.acceptDemande = async (req, res) => {
       include: [{ model: Transaction }], // Include the related transaction
     });
 
-    const parent = await Utilisateur.findOne({where: {id: id_parent}});
+    const parent = await Utilisateur.findOne({ where: { id: id_parent } });
 
     if (!demande)
       return res.status(404).json({ message: "Demande introuvable." });

@@ -26,8 +26,6 @@ exports.createAlimentation = async (req, res) => {
     // 2. Créer l’alimentation liée
     await Alimentation.create({ id: transaction.id });
 
-    // 3. Mettre à jour le solde du compte
-    await compte.update({ solde: soldeApres });
 
     res.status(201).json({ message: "Alimentation enregistrée avec succès" });
   } catch (error) {

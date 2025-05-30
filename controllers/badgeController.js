@@ -16,7 +16,7 @@ exports.getBadgeStatus = async (req, res) => {
 
     // Nombre total de transactions
     const totalTransactions = await Transaction.count({
-      where: { compteId: compte.id },
+      where: { compteId: compte.id, type_transaction: 'Paiement' },
     });
 
     // Total argent dépensé

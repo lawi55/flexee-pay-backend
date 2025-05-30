@@ -82,7 +82,7 @@ exports.transferFromCompte = async (req, res) => {
       await objective.save();
     }
 
-    return res.status(200).json({ message: "Transfert réussi" });
+    return res.status(200).json({ message: "Alimentation effectuée" });
   } catch (error) {
     console.error("Erreur transfert vers tirelire:", error);
     return res.status(500).json({ message: "Erreur serveur" });
@@ -96,6 +96,7 @@ exports.transferToCompte = async (req, res) => {
   if (!montant || isNaN(montant) || montant <= 0) {
     return res.status(400).json({ message: "Montant invalide" });
   }
+  
 
   try {
     const compte = await Compte.findOne({ where: { userId } });
@@ -107,7 +108,7 @@ exports.transferToCompte = async (req, res) => {
       return res.status(404).json({ message: "Comptes non trouvés" });
     }
 
-    if (compte.solde < montant) {
+    if (tirelire.solde < montant) {
       return res.status(400).json({ message: "Solde insuffisant" });
     }
 
@@ -132,7 +133,7 @@ exports.transferToCompte = async (req, res) => {
       await objective.save();
     }
 
-    return res.status(200).json({ message: "Transfert réussi" });
+    return res.status(200).json({ message: "Alimentation effectuée" });
   } catch (error) {
     console.error("Erreur transfert vers tirelire:", error);
     return res.status(500).json({ message: "Erreur serveur" });

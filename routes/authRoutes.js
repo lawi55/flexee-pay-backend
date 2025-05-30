@@ -22,6 +22,9 @@ router.post(
   authenticateToken,  // Middleware to verify JWT
   authController.verifyPassword
 );
+router.get("/getName", authenticateToken, authController.getName
+);
+
 
 
 module.exports = router;

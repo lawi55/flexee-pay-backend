@@ -24,7 +24,7 @@ const Utilisateur = sequelize.define(
     },
     numTelephone: {
       type: DataTypes.CHAR(8),
-      allowNull: false,
+      allowNull: true,
       unique: true,
     },
     otpCode: {

@@ -10,12 +10,16 @@ const { sendOTP } = require("../utils/twilio");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-// Configure email transport
 const transporter = nodemailer.createTransport({
-  service: "Gmail",
+  host: "mail.flexeepay.tn",
+  port: 587,
+  secure: false, // STARTTLS = false ici, mais STARTTLS s'active automatiquement
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false, // facultatif : utile pour des certificats auto-signés
   },
 });
 
@@ -215,7 +219,7 @@ exports.completeInformation = async (req, res) => {
     // ✅ Create a Compte for the user
     await Tirelire.create({
       userId: user.id,
-      compteId: compte.id
+      compteId: compte.id,
     });
 
     console.log("✅ Compte created for user: ", user.id);
@@ -352,6 +356,29 @@ exports.getAuthMethod = async (req, res) => {
   }
 };
 
+exports.getName = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const utilisateur = await Utilisateur.findOne({
+      where: { id: userId },
+      attributes: ["nom", "prenom"],
+    });
+
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    return res.json({ nom: `${utilisateur.prenom} ${utilisateur.nom}` });
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération de la méthode d'authentification :",
+      error
+    );
+    return res.status(500).json({ message: "Erreur interne du serveur." });
+  }
+};
+
 exports.validateToken = async (req, res) => {
   const token = req.headers["authorization"]?.split(" ")[1]; // Extract token from Authorization header
   if (!token) return res.status(401).json({ error: "No token provided." });
@@ -445,9 +472,14 @@ exports.resetPassword = async (req, res) => {
     await user.update({
       motDePasse: hashedPassword,
     });
-    return res.status(200).json({ message: "Mot de passe réinitialisé avec succès." });
+    return res
+      .status(200)
+      .json({ message: "Mot de passe réinitialisé avec succès." });
   } catch (error) {
-    console.error("Erreur lors de la réinitialisation du mot de passe :", error.message);
+    console.error(
+      "Erreur lors de la réinitialisation du mot de passe :",
+      error.message
+    );
     return res.status(500).json({ message: "Erreur serveur." });
   }
 };
@@ -458,12 +490,15 @@ exports.saveDeviceToken = async (req, res) => {
 
   try {
     const user = await Utilisateur.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
+    if (!user)
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
 
     user.deviceToken = deviceToken;
     await user.save();
 
-    return res.status(200).json({ message: "Device token enregistré avec succès." });
+    return res
+      .status(200)
+      .json({ message: "Device token enregistré avec succès." });
   } catch (error) {
     console.error("Erreur lors de l'enregistrement du deviceToken:", error);
     return res.status(500).json({ message: "Erreur serveur." });
@@ -471,18 +506,18 @@ exports.saveDeviceToken = async (req, res) => {
 };
 
 exports.getUserIdFromToken = (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];  // Expecting: "Bearer <token>"
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Expecting: "Bearer <token>"
 
   if (!token) {
-    return res.status(401).json({ error: 'Token missing' });
+    return res.status(401).json({ error: "Token missing" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     return res.status(200).json({ userId: decoded.id });
   } catch (err) {
-    return res.status(403).json({ error: 'Invalid token' });
+    return res.status(403).json({ error: "Invalid token" });
   }
 };
 
@@ -490,34 +525,33 @@ exports.verifyPassword = async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await Utilisateur.findByPk(userId);
-    
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Utilisateur non trouvé' 
+        message: "Utilisateur non trouvé",
       });
     }
 
     // Compare provided password with hashed password
     const isMatch = await bcrypt.compare(req.body.password, user.motDePasse);
-    
+
     if (!isMatch) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Mot de passe incorrect' 
+        message: "Mot de passe incorrect",
       });
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      isValid: true 
+      isValid: true,
     });
-
   } catch (error) {
-    console.error('Error in verifyPassword:', error);
-    res.status(500).json({ 
+    console.error("Error in verifyPassword:", error);
+    res.status(500).json({
       success: false,
-      message: 'Erreur serveur lors de la vérification du mot de passe' 
+      message: "Erreur serveur lors de la vérification du mot de passe",
     });
   }
 };

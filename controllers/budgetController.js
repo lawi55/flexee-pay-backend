@@ -76,7 +76,7 @@ exports.getBudgets = async (req, res) => {
 
 exports.createBudget = async (req, res) => {
   try {
-    const { montant, periode, dateDebut, dateFin, id_categorie } = req.body;
+    const { montant, periode, dateDebut, dateFin, id_categorie, id_jeune } = req.body;
 
     const budget = await Budget.create({
       montant,
@@ -85,6 +85,26 @@ exports.createBudget = async (req, res) => {
       dateFin,
       id_categorie,
       id_jeune: req.user.id, // Ensures the logged-in user's ID is used
+    });
+
+    res.status(201).json(budget);
+  } catch (error) {
+    console.error("Erreur lors de la création du budget :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
+exports.createBudgetForChild = async (req, res) => {
+  try {
+    const { montant, periode, dateDebut, dateFin, id_categorie, id_jeune } = req.body;
+
+    const budget = await Budget.create({
+      montant,
+      periode,
+      dateDebut,
+      dateFin,
+      id_categorie,
+      id_jeune: id_jeune, // Ensures the logged-in user's ID is used
     });
 
     res.status(201).json(budget);

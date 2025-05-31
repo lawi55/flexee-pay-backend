@@ -11,4 +11,7 @@ router.get('/', authenticateToken, budgetController.getBudgets);
 // Créer un nouveau budget
 router.post('/', authenticateToken, budgetController.createBudget);
 
+router.post('/forChild', authenticateToken, budgetController.createBudgetForChild);
+
+
 module.exports = router;

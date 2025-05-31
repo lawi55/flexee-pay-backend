@@ -58,13 +58,13 @@ exports.signup = async (req, res) => {
         : "OTP non envoyé, mais généré avec succès.", // always success because of twilio problem
       numTelephone,
     });
-    /*
+
       if (sendResponse.success) {
       return res.status(200).json({ message: sendResponse.message, numTelephone });
     } else {
       return res.status(500).json({ message: sendResponse.message });
     }
-*/
+
   } catch (error) {
     console.error("Erreur serveur:", error.message);
     return res

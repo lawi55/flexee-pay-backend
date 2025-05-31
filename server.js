@@ -101,7 +101,7 @@ app.set("connectedUsers", connectedUsers);
 
 // Database sync
 sequelize
-  .sync({ force: true })
+  .sync({ force: false })
   .then(() => console.log("✅ Database synced successfully!"))
   .catch((err) => console.error("❌ Error syncing database:", err));
 

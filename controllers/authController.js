@@ -59,12 +59,13 @@ exports.signup = async (req, res) => {
       numTelephone,
     });
 
-      if (sendResponse.success) {
-      return res.status(200).json({ message: sendResponse.message, numTelephone });
+    if (sendResponse.success) {
+      return res
+        .status(200)
+        .json({ message: sendResponse.message, numTelephone });
     } else {
       return res.status(500).json({ message: sendResponse.message });
     }
-
   } catch (error) {
     console.error("Erreur serveur:", error.message);
     return res
@@ -440,11 +441,13 @@ exports.passwordResetReq = async (req, res) => {
 
     // Envoyer l'OTP par SMS
     const sendResponse = await sendOTP(numTelephone, otpCode);
+    console.log(sendResponse.success);
 
     return res.status(200).json({
-      message: sendResponse.success
-        ? "OTP envoyé avec succès."
-        : "OTP non envoyé, mais généré avec succès.",
+      message:
+        sendResponse.success === true
+          ? "OTP envoyé avec succès."
+          : "OTP non envoyé, mais généré avec succès.",
       numTelephone,
     });
   } catch (error) {

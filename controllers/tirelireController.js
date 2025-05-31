@@ -96,7 +96,6 @@ exports.transferToCompte = async (req, res) => {
   if (!montant || isNaN(montant) || montant <= 0) {
     return res.status(400).json({ message: "Montant invalide" });
   }
-  
 
   try {
     const compte = await Compte.findOne({ where: { userId } });
@@ -127,10 +126,10 @@ exports.transferToCompte = async (req, res) => {
     });
 
     for (const objective of activeObjectives) {
-      await objective.update({
-        progress: (objective.progress -= montant),
-      });
-      await objective.save();
+      if (objective.progress > 0) {
+        const newProgress = Math.max(0, objective.progress - montant);
+        await objective.update({ progress: newProgress });
+      }
     }
 
     return res.status(200).json({ message: "Alimentation effectuée" });

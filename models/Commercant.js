@@ -42,6 +42,7 @@ const Commercant = sequelize.define("Commercant", {
   cashback: {
     type: DataTypes.FLOAT,
     allowNull: true,
+    defaultValue: 0.0,
   },
 });
 

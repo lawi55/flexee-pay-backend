@@ -89,7 +89,7 @@ exports.payerParQrCode = async (req, res) => {
     });
 
     // 7️⃣ Créer l'enregistrement spécifique pour le transfert
-    await Paiement.create({
+    const paiement = await Paiement.create({
       id: transactionJeune.id, // Le transfert utilise l'ID de la transaction parent
       id_compteJeune: compteSource.id,
       id_compteCommercant: compteDestination.id,
@@ -111,10 +111,10 @@ exports.payerParQrCode = async (req, res) => {
     if (relation) {
       const parent = await Utilisateur.findByPk(relation.id_parent);
       await Notification.create({
-      userId: relation.id_parent,
-      type: "Paiement enfant",
-      message: `${enfant.prenom} a effectué un paiement de ${montant}DT chez ${magasin.nomMagasin}.`,
-    });
+        userId: relation.id_parent,
+        type: "Paiement enfant",
+        message: `${enfant.prenom} a effectué un paiement de ${montant}DT chez ${magasin.nomMagasin}.`,
+      });
       if (parent?.deviceToken) {
         await sendPushNotification(
           parent.deviceToken,
@@ -131,16 +131,20 @@ exports.payerParQrCode = async (req, res) => {
       where: { id: magasin.commercantId },
     });
 
-    tirelire.solde += (montant * commercant.cashback) / 100;
-    await tirelire.save();
+    if (commercant.cashback > 0) {
+      const cashbackAmount = (montant * commercant.cashback) / 100;
 
-    await Cashback.create({
-      id_paiement: transactionJeune.id,
-      id_tirelire: tirelire.id,
-      montant: (montant * commercant.cashback) / 100,
-    });
+      tirelire.solde += cashbackAmount;
+      await tirelire.save();
 
-    return res.status(200).json({ message: "Paiement effectué avec succès" });
+      await Cashback.create({
+        id_paiement: transactionJeune.id,
+        id_tirelire: tirelire.id,
+        montant: cashbackAmount,
+      });
+    }
+
+    return res.status(200).json({ paiement: paiement, message: "Paiement effectué avec succès" });
   } catch (error) {
     console.error("Erreur lors du paiement :", error);
     return res.status(500).json({ message: "Erreur serveur" });

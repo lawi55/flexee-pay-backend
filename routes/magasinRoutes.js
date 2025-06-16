@@ -10,6 +10,11 @@ router.get(
   authenticateToken,
   magasinController.getMagasinById
 );
+router.get(
+  '/logo/:id',
+  authenticateToken,
+  magasinController.getCommercantByMagasin
+);
 router.get("/", magasinController.getMagasinsLocations);
 
 

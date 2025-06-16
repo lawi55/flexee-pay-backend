@@ -115,6 +115,7 @@ exports.payerParQrCode = async (req, res) => {
         type: "Paiement enfant",
         message: `${enfant.prenom} a effectué un paiement de ${montant}DT chez ${magasin.nomMagasin}.`,
       });
+
       if (parent?.deviceToken) {
         await sendPushNotification(
           parent.deviceToken,
@@ -144,7 +145,9 @@ exports.payerParQrCode = async (req, res) => {
       });
     }
 
-    return res.status(200).json({ paiement: paiement, message: "Paiement effectué avec succès" });
+    return res
+      .status(200)
+      .json({ paiement: paiement, message: "Paiement effectué avec succès" });
   } catch (error) {
     console.error("Erreur lors du paiement :", error);
     return res.status(500).json({ message: "Erreur serveur" });

@@ -9,6 +9,8 @@ const { generateOTP } = require("../utils/otpUtils");
 const { sendOTP } = require("../utils/twilio");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { loadTemplate } = require('../utils/email-templates');
+
 
 const transporter = nodemailer.createTransport({
   host: "mail.flexeepay.tn",
@@ -404,58 +406,57 @@ exports.validateToken = async (req, res) => {
 exports.passwordResetReq = async (req, res) => {
   try {
     const { numTelephone } = req.body;
-
-    // Vérifier si le numéro existe déjà
-    let user = await Utilisateur.findOne({ where: { numTelephone } });
+    const user = await Utilisateur.findOne({ where: { numTelephone } });
 
     if (!user) {
       return res.status(400).json({ message: "Utilisateur non trouvé." });
     }
 
-    // Send email
-    const subject = "Demande de réinisitatilion de mot de passe";
+    // Generate OTP
+    const otpCode = generateOTP();
+    const otpExpiration = new Date(Date.now() + 5 * 60 * 1000);
+    await user.update({ otpCode, otpExpiration });
 
-    const emailContent = `
-      Bonjour ${user.prenom},
+    // Load email template
+    const emailHtml = await loadTemplate("password-reset-email", {
+      prenom: user.prenom,
+      otpCode,
+      logoUrl: "https://res.cloudinary.com/drijzyk4h/image/upload/v1750098891/logo_with_text_blue_toiyvf.png",
+      currentYear: new Date().getFullYear(),
+    });
 
-      Vous avez demandé de reinisialiser votre mot de passe.
+    // Plain text version
+    const textContent = `
+    Bonjour ${user.prenom},
 
-      Si vous ne souvenez pas de cette demande, veuillez sécuriser votre compte.
+    Votre code de réinitialisation est : ${otpCode}
+    Ce code expire dans 5 minutes.
 
-      Cordialement,
-      L'équipe Flexee Pay
+    Cordialement,
+    Flexee Pay
     `;
 
+    // Send email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject,
-      text: emailContent,
+      subject: "Réinitialisation de mot de passe Flexee Pay",
+      text: textContent,
+      html: emailHtml,
     });
 
-    // Générer un OTP
-    const otpCode = generateOTP();
-    const otpExpiration = new Date(Date.now() + 5 * 60 * 1000); // Expire après 5 min
-
-    await user.update({ otpCode, otpExpiration });
-
-    // Envoyer l'OTP par SMS
+    // Send SMS
     const sendResponse = await sendOTP(numTelephone, otpCode);
-    console.log(sendResponse.success);
 
     return res.status(200).json({
-      message:
-        sendResponse.success === true
-          ? "OTP envoyé avec succès."
-          : "OTP non envoyé, mais généré avec succès.",
+      message: sendResponse.success
+        ? "Code de vérification envoyé par email et SMS"
+        : "Code envoyé par email uniquement",
       numTelephone,
     });
   } catch (error) {
-    console.error(
-      "Erreur lors de l'envoi de l'OTP pour réinitialisation :",
-      error.message
-    );
-    return res.status(500).json({ message: "Erreur serveur." });
+    console.error("Erreur réinitialisation mot de passe:", error);
+    return res.status(500).json({ message: "Erreur serveur" });
   }
 };
 

@@ -44,7 +44,6 @@ exports.createDemande = async (req, res) => {
 
     const io = req.app.get("io");
     const connectedUsers = req.app.get("connectedUsers");
-
     const parentSocketId = connectedUsers.get(id_parent.toString());
 
     if (parentSocketId) {

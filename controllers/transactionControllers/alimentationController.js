@@ -26,7 +26,6 @@ exports.createAlimentation = async (req, res) => {
     // 2. Créer l’alimentation liée
     await Alimentation.create({ id: transaction.id });
 
-
     res.status(201).json({ message: "Alimentation enregistrée avec succès" });
   } catch (error) {
     console.error("Erreur createAlimentation:", error);

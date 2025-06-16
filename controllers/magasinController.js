@@ -1,4 +1,5 @@
 const Magasin = require("../models/Magasin");
+const Commercant = require("../models/Commercant");
 
 exports.getMagasinsWithQrCodes = async (req, res) => {
   try {
@@ -42,6 +43,45 @@ exports.getMagasinById = async (req, res) => {
     });
   }
 };
+
+exports.getCommercantByMagasin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const magasin = await Magasin.findByPk(id, {
+      include: [{
+        model: Commercant,
+        attributes: ['logo'] // Make sure this matches your column name exactly
+      }]
+    });
+
+    if (!magasin) {
+      return res.status(404).json({
+        success: false,
+        message: "Magasin non trouvé",
+      });
+    }
+
+    if (!magasin.Commercant) { // Case-sensitive model name
+      return res.status(404).json({
+        success: false,
+        message: "Commercant non trouvé pour ce magasin",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      logo: magasin.Commercant.logo // Return the exact field name
+    });
+  } catch (error) {
+    console.error("Erreur dans getCommercantByMagasin :", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur",
+    });
+  }
+};
+
 
 exports.getMagasinsLocations = async (req, res) => {
   try {

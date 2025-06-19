@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 const Utilisateur = require("./Utilisateur");
+const Transaction = require("./Transaction");
 
 const Notification = sequelize.define(
   "Notification",
@@ -15,6 +16,14 @@ const Notification = sequelize.define(
       allowNull: false,
       references: {
         model: Utilisateur,
+        key: "id",
+      },
+    },
+    transactionId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: Transaction,
         key: "id",
       },
     },
@@ -39,5 +48,6 @@ const Notification = sequelize.define(
 );
 
 Notification.belongsTo(Utilisateur, { foreignKey: "userId" });
+Notification.belongsTo(Transaction, { foreignKey: "transactionId" });
 
 module.exports = Notification;

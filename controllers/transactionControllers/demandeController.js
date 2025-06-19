@@ -40,6 +40,7 @@ exports.createDemande = async (req, res) => {
       userId: id_parent,
       type: "Demande",
       message: `${jeune.prenom} vous a demandé ${montant} DT.`,
+      transactionId: transaction.id,
     });
 
     const io = req.app.get("io");
@@ -168,6 +169,11 @@ exports.acceptDemande = async (req, res) => {
       id_parent,
       id_jeune,
     });
+    await Transfert.create({
+      id: transactionJeune.id, // Le transfert utilise l'ID de la transaction parent
+      id_parent,
+      id_jeune,
+    });
 
     await Notification.create({
       userId: id_jeune,
@@ -176,8 +182,8 @@ exports.acceptDemande = async (req, res) => {
     });
 
     // 8️⃣ Marquer la demande comme acceptée + enregistrer montant final
-    await demande.update({
-      statut: "accepted",
+    await transaction.update({
+      statut: "Acceptée",
     });
 
     // 9️⃣ Notifier le jeune
@@ -235,7 +241,7 @@ exports.declineDemande = async (req, res) => {
     }
 
     // 4️⃣ Mettre à jour le statut
-    await transaction.update({ statut: "declined" });
+    await transaction.update({ statut: "Refusée" });
 
     // 5️⃣ Notifier le jeune concerné
     const jeune = await Utilisateur.findOne({

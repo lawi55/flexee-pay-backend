@@ -15,11 +15,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const qrDir = path.join(__dirname, "../upload/qrcodes");
-if (!fs.existsSync(qrDir)) {
-  fs.mkdirSync(qrDir, { recursive: true });
-}
-
 exports.registerCommercant = async (req, res) => {
   try {
     const {

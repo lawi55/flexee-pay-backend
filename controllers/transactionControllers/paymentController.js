@@ -101,6 +101,7 @@ exports.payerParQrCode = async (req, res) => {
       userId: utilisateurId,
       type: "Paiement",
       message: `Votre paiement de ${montant}DT chez ${magasin.nomMagasin} a été validé.`,
+      transactionId: transactionJeune.id
     });
 
     // 5. Chercher le parent lié et envoyer la notification
@@ -114,6 +115,8 @@ exports.payerParQrCode = async (req, res) => {
         userId: relation.id_parent,
         type: "Paiement enfant",
         message: `${enfant.prenom} a effectué un paiement de ${montant}DT chez ${magasin.nomMagasin}.`,
+        transactionId: transactionJeune.id
+
       });
 
       if (parent?.deviceToken) {

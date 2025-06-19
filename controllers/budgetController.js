@@ -2,7 +2,10 @@ const Transaction = require("../models/Transaction");
 const Paiement = require("../models/Paiement");
 const Budget = require("../models/Budget");
 const Categorie = require("../models/Categorie");
+const LigneBudget = require("../models/LigneBudget");
+
 const { Op } = require("sequelize");
+
 
 exports.checkBudgetsDepasses = async (req, res) => {
   try {
@@ -96,20 +99,45 @@ exports.createBudget = async (req, res) => {
 
 exports.createBudgetForChild = async (req, res) => {
   try {
-    const { montant, periode, dateDebut, dateFin, id_categorie, id_jeune } = req.body;
+    const { dateDebut, dateFin, id_jeune, lignes } = req.body;
 
-    const budget = await Budget.create({
-      montant,
-      periode,
-      dateDebut,
-      dateFin,
-      id_categorie,
-      id_jeune: id_jeune, // Ensures the logged-in user's ID is used
-    });
+    // Calculate total amount from all lines
+    const montantTotal = lignes.reduce((sum, ligne) => sum + ligne.montant, 0);
 
-    res.status(201).json(budget);
+
+    try {
+      // Create budget header
+      const budget = await Budget.create({
+        dateDebut,
+        dateFin,
+        id_jeune,
+        montantTotal
+      },);
+
+      // Create all budget lines
+      const lignesToCreate = lignes.map(ligne => ({
+        id_budget: budget.id,
+        id_categorie: ligne.id_categorie,
+        montant: ligne.montant
+      }));
+
+      await LigneBudget.bulkCreate(lignesToCreate,);
+
+      // Get the full budget with lines to return
+      const budgetWithLines = await Budget.findByPk(budget.id, {
+        include: [{ model: LigneBudget}]
+      });
+
+      res.status(201).json(budgetWithLines);
+    } catch (error) {
+      // Rollback transaction if any error occurs
+      throw error;
+    }
   } catch (error) {
     console.error("Erreur lors de la création du budget :", error);
-    res.status(500).json({ message: "Erreur serveur" });
+    res.status(500).json({ 
+      message: "Erreur serveur",
+      error: error.message 
+    });
   }
 };

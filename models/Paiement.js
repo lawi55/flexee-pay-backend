@@ -46,7 +46,7 @@ const Paiement = sequelize.define("Paiement", {
 },
   {
     tableName: "paiements",
-    timestamps: false,
+    timestamps: true,
   });
 
 Transaction.hasOne(Paiement, { foreignKey: "id", onDelete: "CASCADE" });

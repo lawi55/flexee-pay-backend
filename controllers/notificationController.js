@@ -1,13 +1,32 @@
 const Notification = require("../models/Notification");
+const Transaction = require("../models/Transaction");
+
 
 exports.getUserNotifications = async (req, res) => {
   try {
     const notifications = await Notification.findAll({
       where: { userId: req.user.id },
+      include: [
+        {
+          model: Transaction,
+          attributes: ['montant','statut'], // Only include the montant from Transaction
+          required: false // Use false since transactionId might be null
+        }
+      ],
       order: [["createdAt", "DESC"]],
     });
 
-    res.status(200).json(notifications);
+    // Map the notifications to include montant in the response
+    const notificationsWithMontant = notifications.map(notification => {
+      const notificationData = notification.get({ plain: true });
+      return {
+        ...notificationData,
+        montant: notificationData.Transaction?.montant || null,
+        statutTransaction: notificationData.Transaction?.statut || null
+      };
+    });
+
+    res.status(200).json(notificationsWithMontant);
   } catch (error) {
     console.error("Error getting notifications:", error);
     res.status(500).json({ message: "Erreur serveur" });

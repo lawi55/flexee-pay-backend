@@ -101,7 +101,7 @@ exports.payerParQrCode = async (req, res) => {
       userId: utilisateurId,
       type: "Paiement",
       message: `Votre paiement de ${montant}DT chez ${magasin.nomMagasin} a été validé.`,
-      transactionId: transactionJeune.id
+      transactionId: transactionJeune.id,
     });
 
     // 5. Chercher le parent lié et envoyer la notification
@@ -115,8 +115,7 @@ exports.payerParQrCode = async (req, res) => {
         userId: relation.id_parent,
         type: "Paiement enfant",
         message: `${enfant.prenom} a effectué un paiement de ${montant}DT chez ${magasin.nomMagasin}.`,
-        transactionId: transactionJeune.id
-
+        transactionId: transactionJeune.id,
       });
 
       if (parent?.deviceToken) {
@@ -331,10 +330,6 @@ exports.getPaymentsByJeune = async (req, res) => {
       order: [["createdAt", "DESC"]], // Sorting by creation date
     });
 
-    if (paiements.length === 0) {
-      return res.status(200).json({ message: "Aucun paiement trouvé" });
-    }
-
     // Return the payments with the necessary associated data
     res.status(200).json(paiements);
   } catch (error) {
@@ -342,3 +337,43 @@ exports.getPaymentsByJeune = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
+exports.getJeuneAccountsSolde = async (req, res) => {
+  const { idJeune } = req.params;
+
+  try {
+    // Récupération du compte
+    const compte = await Compte.findOne({
+      where: { userId: idJeune },
+      attributes: ["id", "solde"],
+    });
+
+    if (!compte) {
+      return res
+        .status(404)
+        .json({ message: "Compte not found with the given userId" });
+    }
+
+    // Récupération de la tirelire
+    const tirelire = await Tirelire.findOne({
+      where: { userId: idJeune },
+      attributes: ["id", "solde"],
+    });
+
+    if (!tirelire) {
+      return res
+        .status(404)
+        .json({ message: "Tirelire not found with the given userId" });
+    }
+
+    // ✅ Retourne les deux soldes
+    res.status(200).json({
+      compteSolde: compte.solde,
+      tirelireSolde: tirelire.solde,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des soldes:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+

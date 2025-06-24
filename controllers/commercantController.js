@@ -74,8 +74,6 @@ exports.createMagasin = async (req, res) => {
     });
 
     // 2. Generate QR code PNG file (use magasin.id as unique name)
-    //const fileName = `${magasin.id}.png`;
-    //const filePath = path.join(__dirname, "../uploads/qrcodes", fileName);
 
     const qrBuffer = await QRCode.toBuffer(magasin.id, {
       type: "png",
@@ -84,9 +82,6 @@ exports.createMagasin = async (req, res) => {
     });
 
     // 3. Save only the relative path (to access it from frontend or serve as static)
-    //const qrRelativePath = `uploads/qrcodes/${fileName}`;
-    //magasin.qrcode = qrRelativePath;
-    // await magasin.save();
 
     // Upload QR code buffer to Cloudinary
     const uploadStream = cloudinary.uploader.upload_stream(

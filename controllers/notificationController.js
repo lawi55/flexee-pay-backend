@@ -33,7 +33,7 @@ exports.getUserNotifications = async (req, res) => {
   }
 };
 
-exports.markAsRead = async (req, res) => {
+exports.markAsNotRead = async (req, res) => {
   try {
     const notification = await Notification.findByPk(req.params.id);
 
@@ -45,7 +45,7 @@ exports.markAsRead = async (req, res) => {
       return res.status(403).json({ message: "Non autorisé" });
     }
 
-    await notification.update({ isRead: true });
+    await notification.update({ isRead: false });
     res.status(200).json({ message: "Notification marquée comme lue" });
   } catch (error) {
     console.error("Error marking notification as read:", error);
@@ -53,6 +53,18 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
+exports.markAllAsRead = async (req, res) => {
+try {
+    const userId = req.user.id;
+    await Notification.update(
+      { isRead: true },
+      { where: { userId: userId, isRead: false } }
+    );
+    res.status(200).json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark all as read' });
+  }
+};
 exports.deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findByPk(req.params.id);

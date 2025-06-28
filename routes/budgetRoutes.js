@@ -13,5 +13,8 @@ router.post('/', authenticateToken, budgetController.createBudget);
 
 router.post('/forChild', authenticateToken, budgetController.createBudgetForChild);
 
+// Récupérer tous les budgets liés à l'utilisateur connecté
+router.get('/current/:enfantId?', authenticateToken, budgetController.getCurrentBudget);
+
 
 module.exports = router;

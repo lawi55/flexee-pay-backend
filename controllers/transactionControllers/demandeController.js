@@ -43,6 +43,14 @@ exports.createDemande = async (req, res) => {
       transactionId: transaction.id,
     });
 
+    if (jeune && jeune.deviceToken) {
+      const notificationMessage = `Vous avez reçu ${montant} DT de votre parent. 💸`;
+      await sendPushNotification(jeune.deviceToken, notificationMessage);
+      console.log(`Notification envoyée au jeune: ${jeune.deviceToken}`);
+    } else {
+      console.log("Aucun token FCM trouvé pour ce jeune.");
+    }
+
     const io = req.app.get("io");
     const connectedUsers = req.app.get("connectedUsers");
     const parentSocketId = connectedUsers.get(id_parent.toString());

@@ -5,7 +5,7 @@ const { authenticateToken } = require("../middlewares/authMiddleware");
 
 
 router.post("/", authenticateToken, objectifController.createObjectif);
-router.get("/mine", authenticateToken, objectifController.getMyObjectifs);
+router.get('/mine/:enfantId?', authenticateToken, objectifController.getMyObjectifs);
 router.put('/:id/status', authenticateToken, objectifController.updateStatut);
 
 

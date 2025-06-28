@@ -61,14 +61,18 @@ exports.createObjectif = async (req, res) => {
 exports.getMyObjectifs = async (req, res) => {
   try {
     const userId = req.user.id;
+    const jeuneId = req.params.enfantId;
 
     // Vérifie si c'est un parent
     const parent = await Parent.findOne({ where: { id: userId } });
 
     if (parent) {
+      const tirelire = await Tirelire.findOne({
+        where: { userId: jeuneId },
+      });
       // Si c'est un parent, récupère les objectifs qu'il a créés pour ses enfants
       const objectifs = await Objectif.findAll({
-        where: { id_parent: parent.id },
+        where: { id_parent: parent.id, id_tirelire: tirelire.id },
       });
       return res.json(objectifs);
     }

@@ -1,8 +1,10 @@
 const admin = require("firebase-admin");
-const serviceAccount = require("../firebase/serviceAccountKey.json");
+require("dotenv").config(); // pour charger la variable FIREBASE_CONFIG
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(serviceAccount),
 });
 
 const sendPushNotification = (deviceToken, message) => {

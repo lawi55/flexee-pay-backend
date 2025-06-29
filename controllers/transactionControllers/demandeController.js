@@ -20,6 +20,8 @@ exports.createDemande = async (req, res) => {
     }
 
     const jeune = await Utilisateur.findOne({ where: { id: id_jeune } });
+        const parent = await Utilisateur.findOne({ where: { id: id_parent } });
+
     const transaction = await Transaction.create({
       compteId: compte.id,
       type_transaction: "Demande",
@@ -43,12 +45,12 @@ exports.createDemande = async (req, res) => {
       transactionId: transaction.id,
     });
 
-    if (jeune && jeune.deviceToken) {
-      const notificationMessage = `Vous avez reçu ${montant} DT de votre parent. 💸`;
-      await sendPushNotification(jeune.deviceToken, notificationMessage);
-      console.log(`Notification envoyée au jeune: ${jeune.deviceToken}`);
+    if (parent && parent.deviceToken) {
+      const notificationMessage = `${jeune.prenom} vous a demandé ${montant} DT. 💸🥺`;
+      await sendPushNotification(parent.deviceToken, notificationMessage);
+      console.log(`Notification envoyée au jeune: ${parent.deviceToken}`);
     } else {
-      console.log("Aucun token FCM trouvé pour ce jeune.");
+      console.log("Aucun token FCM trouvé pour ce parent.");
     }
 
     const io = req.app.get("io");

@@ -78,7 +78,7 @@ exports.createTransfert = async (req, res) => {
     // 8️⃣ Envoyer une notification push au jeune
     const jeune = await Utilisateur.findOne({ where: { id: id_jeune } });
     if (jeune && jeune.deviceToken) {
-      const notificationMessage = `Vous avez reçu ${montant} DT de votre parent. 💸`;
+      const notificationMessage = `Vous avez reçu ${montant} DT de ${parent.prenom} ! 💸`;
       await sendPushNotification(jeune.deviceToken, notificationMessage);
       console.log(`Notification envoyée au jeune: ${jeune.deviceToken}`);
     } else {

@@ -114,14 +114,14 @@ exports.payerParQrCode = async (req, res) => {
       await Notification.create({
         userId: relation.id_parent,
         type: "Paiement enfant",
-        message: `${enfant.prenom} a effectué un paiement de ${montant}DT chez ${magasin.nomMagasin}.`,
+        message: `${enfant.prenom} a payé ${montant} DT chez ${magasin.nomMagasin}.`,
         transactionId: transactionJeune.id,
       });
 
       if (parent?.deviceToken) {
         await sendPushNotification(
           parent.deviceToken,
-          `Votre enfant a effectué un paiement de ${montant} DT 💸`
+          `${enfant.prenom} a payé ${montant} DT chez ${magasin.nomMagasin} 🛒`
         );
       }
     }

@@ -6,7 +6,6 @@ const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
 const sequelize = require("./config/database"); // Sequelize instance
-
 const authRoutes = require("./routes/authRoutes");
 const cinRoutes = require("./routes/cinRoutes");
 const inviteRoutes = require("./routes/inviteRoutes");

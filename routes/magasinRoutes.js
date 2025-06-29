@@ -16,6 +16,8 @@ router.get(
   magasinController.getCommercantByMagasin
 );
 router.get("/", magasinController.getMagasinsLocations);
+router.get('/check/:id', magasinController.checkMagasinExists);
+
 
 
 module.exports = router;

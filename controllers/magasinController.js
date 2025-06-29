@@ -95,3 +95,19 @@ exports.getMagasinsLocations = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+exports.checkMagasinExists = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const magasin = await Magasin.findByPk(id);
+
+    if (magasin) {
+      return res.status(200).json({ exists: true });
+    } else {
+      return res.status(404).json({ exists: false });
+    }
+  } catch (error) {
+    console.error('Erreur checkMagasinExists:', error);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+};

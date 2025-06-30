@@ -49,10 +49,12 @@ exports.getCommercantByMagasin = async (req, res) => {
     const { id } = req.params;
 
     const magasin = await Magasin.findByPk(id, {
-      include: [{
-        model: Commercant,
-        attributes: ['logo'] // Make sure this matches your column name exactly
-      }]
+      include: [
+        {
+          model: Commercant,
+          attributes: ["logo"], // Make sure this matches your column name exactly
+        },
+      ],
     });
 
     if (!magasin) {
@@ -62,7 +64,8 @@ exports.getCommercantByMagasin = async (req, res) => {
       });
     }
 
-    if (!magasin.Commercant) { // Case-sensitive model name
+    if (!magasin.Commercant) {
+      // Case-sensitive model name
       return res.status(404).json({
         success: false,
         message: "Commercant non trouvé pour ce magasin",
@@ -71,7 +74,7 @@ exports.getCommercantByMagasin = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      logo: magasin.Commercant.logo // Return the exact field name
+      logo: magasin.Commercant.logo, // Return the exact field name
     });
   } catch (error) {
     console.error("Erreur dans getCommercantByMagasin :", error);
@@ -81,7 +84,6 @@ exports.getCommercantByMagasin = async (req, res) => {
     });
   }
 };
-
 
 exports.getMagasinsLocations = async (req, res) => {
   try {
@@ -93,5 +95,21 @@ exports.getMagasinsLocations = async (req, res) => {
   } catch (error) {
     console.error("Erreur getMagasinsLocations:", error);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+exports.checkMagasinExists = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const magasin = await Magasin.findByPk(id);
+
+    if (magasin) {
+      return res.status(200).json({ exists: true });
+    } else {
+      return res.status(404).json({ exists: false });
+    }
+  } catch (error) {
+    console.error("Erreur checkMagasinExists:", error);
+    return res.status(500).json({ error: "Erreur serveur" });
   }
 };

@@ -22,7 +22,6 @@ const cashbackRoutes = require("./routes/cashbackRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const badgeRoutes = require("./routes/badgeRoutes");
 const alimentationRoutes = require("./routes/alimentationRoutes");
-const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -61,7 +60,6 @@ app.use("/cashback", cashbackRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/badge", badgeRoutes);
 app.use("/alimentation", alimentationRoutes);
-app.use("/chat", chatRoutes);
 
 // Test route
 app.get("/", (req, res) => {

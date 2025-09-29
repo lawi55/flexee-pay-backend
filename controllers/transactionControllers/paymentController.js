@@ -323,11 +323,21 @@ exports.getPaymentsByJeune = async (req, res) => {
           ],
         },
         {
+          model: Categorie,
+          attributes: ["nom_categorie"],
+        },
+        {
           model: Magasin,
-          attributes: ["nomMagasin"],
+          attributes: ["nomMagasin", "latitude", "longitude"],
+          include: [
+            {
+              model: Commercant,
+              attributes: ["logo"], // Add logo here
+            },
+          ],
         },
       ],
-      order: [["createdAt", "DESC"]], // Sorting by creation date
+      order: [["createdAt", "DESC"]],
     });
 
     // Return the payments with the necessary associated data
@@ -376,4 +386,3 @@ exports.getJeuneAccountsSolde = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
-

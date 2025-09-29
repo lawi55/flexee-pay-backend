@@ -1,48 +1,31 @@
-# Flutter
-**/build/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-.idea/
-.vscode/
-*.iml
-
-# Generated files
-*.log
-*.lock
-*.tmp
-*.swp
-
-# Flutter specific files
-ios/Pods/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-macos/Flutter/ephemeral/
-android/.gradle/
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/key.properties
-
-# Node.js
+# Node modules
 node_modules/
+
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
-.env
-.env.local
-.env.*.local
 
-# Others
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# OS files
 .DS_Store
-*.bak
-*.old
-*.orig
+Thumbs.db
 
-# If you're using Firebase
-.firebase/
+# Environment variables
+.env
+
+# Coverage
+coverage/
+
+# VS Code
+.vscode/
+
+# Build output
+dist/

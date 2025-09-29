@@ -64,15 +64,13 @@ exports.registerCommercant = async (req, res) => {
 
 exports.createMagasin = async (req, res) => {
   try {
-    const { nomMagasin, adresse, commercantId, latitude, longitude } = req.body;
+    const { nomMagasin, adresse, commercantId } = req.body;
 
     // 1. Create magasin first
     const magasin = await Magasin.create({
       commercantId,
       nomMagasin,
       adresse,
-      latitude,
-      longitude,
     });
 
     // 2. Generate QR code PNG file (use magasin.id as unique name)
@@ -109,6 +107,7 @@ exports.createMagasin = async (req, res) => {
     );
 
     streamifier.createReadStream(qrBuffer).pipe(uploadStream);
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({

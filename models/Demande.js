@@ -42,7 +42,5 @@ const Demande = sequelize.define("Demande", {
 
 Transaction.hasOne(Demande, { foreignKey: "id", onDelete: "CASCADE" });
 Demande.belongsTo(Transaction, { foreignKey: "id" });
-Demande.belongsTo(Jeune, { foreignKey: "id_jeune" });
-Jeune.hasMany(Demande, { foreignKey: "id_jeune"});
 
 module.exports = Demande;

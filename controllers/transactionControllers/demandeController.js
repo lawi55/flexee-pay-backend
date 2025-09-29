@@ -20,7 +20,7 @@ exports.createDemande = async (req, res) => {
     }
 
     const jeune = await Utilisateur.findOne({ where: { id: id_jeune } });
-    const parent = await Utilisateur.findOne({ where: { id: id_parent } });
+        const parent = await Utilisateur.findOne({ where: { id: id_parent } });
 
     const transaction = await Transaction.create({
       compteId: compte.id,
@@ -63,7 +63,6 @@ exports.createDemande = async (req, res) => {
         montant,
         message,
         id_jeune,
-        prenomEnfant: jeune.prenom,
       });
       console.log(`Demande pushed to Parent ${id_parent} via Socket.io`);
     } else {

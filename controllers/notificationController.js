@@ -1,8 +1,5 @@
 const Notification = require("../models/Notification");
 const Transaction = require("../models/Transaction");
-const Demande = require("../models/Demande");
-const Utilisateur = require("../models/Utilisateur");
-const Jeune = require("../models/Jeune");
 
 
 exports.getUserNotifications = async (req, res) => {
@@ -12,53 +9,24 @@ exports.getUserNotifications = async (req, res) => {
       include: [
         {
           model: Transaction,
-          attributes: ["montant", "statut", "type_transaction"],
-          required: false,
-          include: [
-            {
-              model: Demande,
-              attributes: ["message", "id_jeune"],
-              required: false,
-              include: [
-                {
-                  model: Jeune,
-                  required: false,
-                  include: [{
-                    model: Utilisateur,
-                    as: 'Utilisateur',  // Match your association name
-                    attributes: ["prenom", "nom"],  // Get fields from parent
-                    required: false
-                  }]
-                }
-              ]
-            },
-          ],
-        },
+          attributes: ['montant','statut'], // Only include the montant from Transaction
+          required: false // Use false since transactionId might be null
+        }
       ],
       order: [["createdAt", "DESC"]],
     });
 
-    const enrichedNotifications = notifications.map((notification) => {
+    // Map the notifications to include montant in the response
+    const notificationsWithMontant = notifications.map(notification => {
       const notificationData = notification.get({ plain: true });
-      const transaction = notificationData.Transaction || {};
-      const demande = transaction.Demande || {};
-      const jeune = demande.Jeune || {};
-      const utilisateur = jeune.Utilisateur || {};
-
       return {
         ...notificationData,
-        montant: transaction.montant ?? null,
-        statutTransaction: transaction.statut ?? null,
-        typeTransaction: transaction.type_transaction ?? null,
-        messageDemande: demande.message ?? null,
-        jeuneInfo: utilisateur.prenom ? {
-          prenom: utilisateur.prenom,
-          nom: utilisateur.nom
-        } : null
+        montant: notificationData.Transaction?.montant || null,
+        statutTransaction: notificationData.Transaction?.statut || null
       };
     });
 
-    res.status(200).json(enrichedNotifications);
+    res.status(200).json(notificationsWithMontant);
   } catch (error) {
     console.error("Error getting notifications:", error);
     res.status(500).json({ message: "Erreur serveur" });

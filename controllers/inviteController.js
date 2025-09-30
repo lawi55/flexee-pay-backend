@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
 exports.sendInvite = async (req, res) => {
   try {
     const { firstName, email, numTelephone, message, senderType } = req.body;
-    const senderId = req.user.id; // Ensure authenticateToken is used
+    const senderId = req.user.id;
 
     if (!firstName || !email || !numTelephone) {
       return res
@@ -65,30 +65,39 @@ exports.sendInvite = async (req, res) => {
       message,
     });
 
-    // Send email
-    const subject =
-      senderType === "Jeune"
-        ? "Invitation à rejoindre Flexee Pay en tant que Parent"
-        : "Invitation à rejoindre Flexee Pay en tant que Jeune";
+    // Email configuration
+    const recipientType = senderType === "Jeune" ? "Parent" : "Jeune";
+    const subject = `Invitation à rejoindre Flexee Pay en tant que ${recipientType}`;
 
-    const emailContent = `
-      Bonjour ${firstName},
-
-      Vous avez reçu une invitation à rejoindre Flexee Pay.
-
-      Message : ${message || "Pas de message ajouté."}
-
-      Cliquez ici pour télécharger l'application : [Lien de téléchargement]
-
-      Cordialement,
-      L'équipe Flexee Pay
-    `;
+    // Read and compile HTML template
+    const emailTemplate = await fs.readFile('./templates/emails/invitation-email.html', 'utf8');
+    
+    const compiledTemplate = emailTemplate
+      .replace(/{{firstName}}/g, firstName)
+      .replace(/{{recipientType}}/g, recipientType)
+      .replace(/{{message}}/g, message || '')
+      .replace(/{{numTelephone}}/g, numTelephone)
+      .replace(/{{downloadLink}}/g, process.env.APP_DOWNLOAD_LINK || 'https://flexeepay.tn/download')
+      .replace(/{{logoUrl}}/g, process.env.LOGO_URL || 'https://flexeepay.tn/logo.png')
+      .replace(/{{currentYear}}/g, new Date().getFullYear().toString());
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject,
-      text: emailContent,
+      html: compiledTemplate,
+      text: `Bonjour ${firstName},
+
+Vous avez reçu une invitation à rejoindre Flexee Pay en tant que ${recipientType}.
+
+${message ? `Message : ${message}` : ''}
+
+Téléchargez l'application ici : ${process.env.APP_DOWNLOAD_LINK || 'https://flexeepay.tn/download'}
+
+Une fois installée, utilisez votre numéro ${numTelephone} pour finaliser votre inscription.
+
+Cordialement,
+L'équipe Flexee Pay`
     });
 
     res.status(200).json({ message: "Invitation envoyée avec succès !" });

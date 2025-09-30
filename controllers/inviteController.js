@@ -5,6 +5,7 @@ const Parent = require("../models/Parent");
 const Jeune = require("../models/Jeune");
 const ParentJeune = require("../models/ParentJeune");
 const { Op } = require("sequelize");
+const { loadTemplate } = require('../utils/email-templates');
 
 const transporter = nodemailer.createTransport({
   host: "mail.flexeepay.tn",

@@ -69,35 +69,39 @@ exports.sendInvite = async (req, res) => {
     const recipientType = senderType === "Jeune" ? "Parent" : "Jeune";
     const subject = `Invitation à rejoindre Flexee Pay en tant que ${recipientType}`;
 
-    // Read and compile HTML template
-    const emailTemplate = await fs.readFile('./templates/emails/invitation-email.html', 'utf8');
-    
-    const compiledTemplate = emailTemplate
-      .replace(/{{firstName}}/g, firstName)
-      .replace(/{{recipientType}}/g, recipientType)
-      .replace(/{{message}}/g, message || '')
-      .replace(/{{numTelephone}}/g, numTelephone)
-      .replace(/{{downloadLink}}/g, process.env.APP_DOWNLOAD_LINK || 'https://flexeepay.tn/download')
-      .replace(/{{logoUrl}}/g, process.env.LOGO_URL || 'https://flexeepay.tn/logo.png')
-      .replace(/{{currentYear}}/g, new Date().getFullYear().toString());
+    // Load email template
+    const emailHtml = await loadTemplate("invitation-email", {
+      firstName: firstName,
+      recipientType: recipientType,
+      message: message || '',
+      numTelephone: numTelephone,
+      downloadLink: process.env.APP_DOWNLOAD_LINK || 'https://flexeepay.tn/download',
+      logoUrl: "https://res.cloudinary.com/drijzyk4h/image/upload/v1750098891/logo_with_text_blue_toiyvf.png",
+      currentYear: new Date().getFullYear(),
+    });
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject,
-      html: compiledTemplate,
-      text: `Bonjour ${firstName},
+    // Plain text version
+    const textContent = `
+Bonjour ${firstName},
 
 Vous avez reçu une invitation à rejoindre Flexee Pay en tant que ${recipientType}.
 
-${message ? `Message : ${message}` : ''}
+${message ? `Message personnalisé : ${message}` : ''}
 
 Téléchargez l'application ici : ${process.env.APP_DOWNLOAD_LINK || 'https://flexeepay.tn/download'}
 
 Une fois installée, utilisez votre numéro ${numTelephone} pour finaliser votre inscription.
 
 Cordialement,
-L'équipe Flexee Pay`
+L'équipe Flexee Pay
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject,
+      text: textContent,
+      html: emailHtml,
     });
 
     res.status(200).json({ message: "Invitation envoyée avec succès !" });

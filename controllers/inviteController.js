@@ -6,12 +6,16 @@ const Jeune = require("../models/Jeune");
 const ParentJeune = require("../models/ParentJeune");
 const { Op } = require("sequelize");
 
-// Configure email transport
 const transporter = nodemailer.createTransport({
-  service: "Gmail",
+  host: "mail.flexeepay.tn",
+  port: 587,
+  secure: false, // STARTTLS = false ici, mais STARTTLS s'active automatiquement
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false, // facultatif : utile pour des certificats auto-signés
   },
 });
 

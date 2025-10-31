@@ -160,7 +160,7 @@ exports.aiChat = async (req, res) => {
         getTirelire(userId),
       ]);
 
-      // Children list + balances
+      // Children list + balances + last 5 paiements
       const links = await ParentJeune.findAll({ where: { id_parent: userId } });
       const childIds = links.map((l) => l.id_jeune);
       const kids = childIds.length
@@ -170,12 +170,29 @@ exports.aiChat = async (req, res) => {
       const childLines = [];
       for (const k of kids) {
         const [c, t] = await Promise.all([getCompte(k.id), getTirelire(k.id)]);
+        const last5 = await getLastPaiements(c?.id, 5);
+
         const name =
           [k.prenom, k.nom].filter(Boolean).join(" ").trim() || "(Sans nom)";
+        const paiementsLines =
+          (last5 || [])
+            .map(
+              (p) =>
+                `  • ${new Date(p.date)
+                  .toISOString()
+                  .slice(0, 19)
+                  .replace("T", " ")} • ${fmtMoney(p.montant)}${
+                  p.magasin ? ` • ${p.magasin}` : ""
+                }`
+            )
+            .join("\n") || "  • Aucun paiement.";
+
         childLines.push(
           `- Enfant: ${name} (id:${k.id}) • Compte: ${fmtMoney(
             c?.solde
-          )} • Tirelire: ${fmtMoney(t?.solde)}`
+          )} • Tirelire: ${fmtMoney(
+            t?.solde
+          )}\n  Paiements récents:\n${paiementsLines}`
         );
       }
 

@@ -24,10 +24,6 @@ const ChatHistory = sequelize.define('chat_history', {
         type: DataTypes.TEXT,
         allowNull: false,
     },
-    context: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-    },
 }, {
     tableName: 'chathistory',
     timestamps: true,

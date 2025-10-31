@@ -10,7 +10,6 @@ const Transaction = require("../models/Transaction");
 const Paiement = require("../models/Paiement");
 const Magasin = require("../models/Magasin");
 
-
 const SYSTEM_PROMPT = (
   role,
   context = "",
@@ -66,7 +65,7 @@ async function callHF(prompt) {
   return text || "(empty reply)";
 }
 
-// ↓ paste this directly under your existing callHF, keep your imports & SYSTEM_PROMPT as-is
+// controllers/chatController.js (facts-only; roles are exactly "Jeune" | "Parent")
 exports.aiChat = async (req, res) => {
   try {
     const { message, context, role = "inconnu" } = req.body || {};
@@ -83,271 +82,114 @@ exports.aiChat = async (req, res) => {
         .json({ message: "Contexte requis", success: false });
     }
 
-    // ── inline minis (scoped here for clarity; no external helpers) ──────────────
+    // Inline minis (no external helpers)
     const fmtMoney = (v) => `${Number(v ?? 0).toFixed(2)} DT`;
-    const lc = (s = "") => String(s || "").toLowerCase();
-
-    const extractIntent = (raw = "") => {
-      const m = lc(raw);
-      if (/\b(dernier|last)\s+(paiement|payment)\b/.test(m))
-        return { type: "LAST_PAYMENT" };
-      if (/\b(mon|ma|my)\s+(solde|balance)\b/.test(m))
-        return { type: "MY_SOLDE" };
-      const name =
-        m.match(
-          /\b(?:tirelire|piggy)\b.*\b(?:de|d')\s*([a-zàâçéèêëîïôûùüÿñæœ'-]+)\b/i
-        )?.[1] ||
-        m.match(/\b(?:enfant|child)\s+([a-zàâçéèêëîïôûùüÿñæœ'-]+)\b/i)?.[1] ||
-        m.match(/\balex\b/i)?.[0];
-      if (/\b(tirelire|piggy)\b/.test(m) && name)
-        return { type: "CHILD_TIRELIRE", childName: name };
-      return { type: "OTHER" };
-    };
 
     const getCompte = (uid) => Compte.findOne({ where: { userId: uid } });
     const getTirelire = (uid) => Tirelire.findOne({ where: { userId: uid } });
 
-    // Récupère les paiements (Transaction → Paiement + Magasin)
+    // Paiements: start from Paiement (compte jeune) → join Transaction (montant/date/statut) → optional Magasin
     const getLastPaiements = async (compteId, n = 5) => {
       if (!compteId) return [];
-      const txs = await Transaction.findAll({
-        where: { compteId, type_transaction: "Paiement" },
-        order: [["date_transaction", "DESC"]],
+      const pays = await Paiement.findAll({
+        where: { id_compteJeune: compteId },
+        order: [["createdAt", "DESC"]],
         limit: n,
       });
-      if (!txs.length) return [];
+      if (!pays.length) return [];
 
-      const ids = txs.map((t) => t.id);
-      const paiements = await Paiement.findAll({ where: { id: ids } });
-      const pById = new Map(paiements.map((p) => [p.id, p]));
+      const ids = pays.map((p) => p.id);
+      const txs = await Transaction.findAll({ where: { id: ids } });
+      const tById = new Map(txs.map((t) => [t.id, t]));
 
       const magasinIds = [
-        ...new Set(paiements.map((p) => p.id_magasin).filter(Boolean)),
+        ...new Set(pays.map((p) => p.id_magasin).filter(Boolean)),
       ];
       const magasins = magasinIds.length
         ? await Magasin.findAll({ where: { id: magasinIds } })
         : [];
       const mById = new Map(magasins.map((m) => [m.id, m]));
 
-      return txs.map((t) => {
-        const p = pById.get(t.id);
-        const store = p ? mById.get(p.id_magasin) : null;
-        return {
-          id: t.id,
-          montant: t.montant,
-          date: t.date_transaction,
-          statut: t.statut,
-          magasin: store?.nomMagasin || null,
-        };
-      });
+      return pays
+        .map((p) => {
+          const t = tById.get(p.id);
+          return {
+            id: p.id,
+            montant: t?.montant ?? null,
+            date: t?.date_transaction ?? p.createdAt,
+            magasin: mById.get(p.id_magasin)?.nomMagasin || null,
+            statut: t?.statut ?? null,
+          };
+        })
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
     };
 
-    const buildChildPayload = async (childUserId) => {
-      const [c, tire, last5] = await Promise.all([
-        getCompte(childUserId),
-        getTirelire(childUserId),
-        (async () => {
-          const cc = await getCompte(childUserId);
-          return cc ? getLastPaiements(cc.id, 5) : [];
-        })(),
+    // ── Build the exact facts block the LLM must use (no intent detection) ──
+    let roleBlock = "";
+
+    if (role === "Jeune") {
+      const [compte, tirelire] = await Promise.all([
+        getCompte(userId),
+        getTirelire(userId),
       ]);
-      const soldeCompte = c?.solde ?? 0;
-      const soldeTirelire = tire?.solde ?? 0;
-      const transactionsBlock =
+      const last5 = await getLastPaiements(compte?.id, 5);
+
+      const paiementsLines =
         (last5 || [])
           .map(
-            (p, i) =>
-              `${i + 1}. ${fmtMoney(p.montant)} • ${
-                p.magasin || "N/A"
-              } • ${new Date(p.date)
+            (p) =>
+              `- ${new Date(p.date)
                 .toISOString()
                 .slice(0, 19)
-                .replace("T", " ")}`
+                .replace("T", " ")} • ${fmtMoney(p.montant)}${
+                p.magasin ? ` • ${p.magasin}` : ""
+              }`
           )
-          .join("\n") || "Aucun paiement.";
-      return { soldeCompte, soldeTirelire, last5, transactionsBlock };
-    };
+          .join("\n") || "- Aucun paiement.";
 
-    const buildParentPayload = async (parentUserId) => {
-      const links = await ParentJeune.findAll({
-        where: { id_parent: parentUserId },
-      });
+      roleBlock = [
+        `Mon solde de compte: ${fmtMoney(compte?.solde)}`,
+        `Mon solde de tirelire: ${fmtMoney(tirelire?.solde)}`,
+        `Mes 5 derniers paiements:`,
+        paiementsLines,
+      ].join("\n");
+    } else if (role === "Parent") {
+      // Parent balances
+      const [compte, tirelire] = await Promise.all([
+        getCompte(userId),
+        getTirelire(userId),
+      ]);
+
+      // Children list + balances
+      const links = await ParentJeune.findAll({ where: { id_parent: userId } });
       const childIds = links.map((l) => l.id_jeune);
       const kids = childIds.length
         ? await Utilisateur.findAll({ where: { id: childIds } })
         : [];
-      const out = [];
+
+      const childLines = [];
       for (const k of kids) {
-        const data = await buildChildPayload(k.id);
-        out.push({
-          childId: k.id,
-          childNom:
-            [k.prenom, k.nom].filter(Boolean).join(" ").trim() || "(Sans nom)",
-          ...data,
-        });
+        const [c, t] = await Promise.all([getCompte(k.id), getTirelire(k.id)]);
+        const name =
+          [k.prenom, k.nom].filter(Boolean).join(" ").trim() || "(Sans nom)";
+        childLines.push(
+          `- Enfant: ${name} (id:${k.id}) • Compte: ${fmtMoney(
+            c?.solde
+          )} • Tirelire: ${fmtMoney(t?.solde)}`
+        );
       }
-      return out;
-    };
 
-    // ── 1) Réponses directes sans LLM ───────────────────────────────────────────
-    const intent = extractIntent(message);
-
-    if (["Jeune"].includes(lc(role))) {
-      if (intent.type === "MY_SOLDE") {
-        const [c, t] = await Promise.all([
-          getCompte(userId),
-          getTirelire(userId),
-        ]);
-        const quick = `Ton solde est ${fmtMoney(
-          c?.solde
-        )} (compte) et ${fmtMoney(t?.solde)} (tirelire).`;
-        try {
-          await ChatHistory.create({
-            userId,
-            userMessage: message,
-            aiResponse: quick,
-          });
-        } catch {}
-        return res
-          .status(200)
-          .json({
-            response: quick,
-            success: true,
-            roleIncluded: true,
-            source: "direct",
-          });
-      }
-      if (intent.type === "LAST_PAYMENT") {
-        const c = await getCompte(userId);
-        const last = c ? (await getLastPaiements(c.id, 1))[0] : null;
-        const quick = last
-          ? `Dernier paiement: ${fmtMoney(last.montant)}${
-              last.magasin ? ` chez ${last.magasin}` : ""
-            } le ${new Date(last.date).toLocaleString()}.`
-          : "Aucun paiement trouvé.";
-        try {
-          await ChatHistory.create({
-            userId,
-            userMessage: message,
-            aiResponse: quick,
-          });
-        } catch {}
-        return res
-          .status(200)
-          .json({
-            response: quick,
-            success: true,
-            roleIncluded: true,
-            source: "direct",
-          });
-      }
+      roleBlock = [
+        `Mon solde parent (compte): ${fmtMoney(compte?.solde)}`,
+        `Mon solde parent (tirelire): ${fmtMoney(tirelire?.solde)}`,
+        `Mes enfants (${childLines.length}):`,
+        childLines.length ? childLines.join("\n") : "- Aucun enfant lié.",
+      ].join("\n");
+    } else {
+      roleBlock = "Rôle invalide : utilisez 'Jeune' ou 'Parent'.";
     }
 
-    if (lc(role) === "Parent") {
-      if (intent.type === "MY_SOLDE") {
-        const [c, t] = await Promise.all([
-          getCompte(userId),
-          getTirelire(userId),
-        ]);
-        const quick = `Votre solde est ${fmtMoney(
-          c?.solde
-        )} (compte) et ${fmtMoney(t?.solde)} (tirelire).`;
-        try {
-          await ChatHistory.create({
-            userId,
-            userMessage: message,
-            aiResponse: quick,
-          });
-        } catch {}
-        return res
-          .status(200)
-          .json({
-            response: quick,
-            success: true,
-            roleIncluded: true,
-            source: "direct",
-          });
-      }
-      if (intent.type === "CHILD_TIRELIRE") {
-        const perChild = await buildParentPayload(userId);
-        const name = lc(intent.childName || "");
-        const found = perChild.find((c) => lc(c.childNom).includes(name));
-        const quick = found
-          ? `La tirelire de ${found.childNom} est à ${fmtMoney(
-              found.soldeTirelire
-            )}.`
-          : `Je n'ai pas trouvé l'enfant « ${intent.childName || "?"} ».`;
-        try {
-          await ChatHistory.create({
-            userId,
-            userMessage: message,
-            aiResponse: quick,
-          });
-        } catch {}
-        return res
-          .status(200)
-          .json({
-            response: quick,
-            success: true,
-            roleIncluded: true,
-            source: "direct",
-          });
-      }
-      if (intent.type === "LAST_PAYMENT") {
-        const perChild = await buildParentPayload(userId);
-        const all = perChild
-          .flatMap((c) =>
-            (c.last5 || []).map((p) => ({ child: c.childNom, ...p }))
-          )
-          .sort((a, b) => new Date(b.date) - new Date(a.date));
-        const lp = all[0];
-        const quick = lp
-          ? `Dernier paiement (tous enfants): ${fmtMoney(lp.montant)} par ${
-              lp.child
-            }${lp.magasin ? ` chez ${lp.magasin}` : ""} le ${new Date(
-              lp.date
-            ).toLocaleString()}.`
-          : "Aucun paiement enfant trouvé.";
-        try {
-          await ChatHistory.create({
-            userId,
-            userMessage: message,
-            aiResponse: quick,
-          });
-        } catch {}
-        return res
-          .status(200)
-          .json({
-            response: quick,
-            success: true,
-            roleIncluded: true,
-            source: "direct",
-          });
-      }
-    }
-
-    // ── 2) Construire le roleBlock (réutilise votre format commenté) ────────────
-    let roleBlock = "";
-    if (lc(role) === "Parent") {
-      const perChild = await buildParentPayload(userId);
-      roleBlock = perChild
-        .map((c, i) => {
-          return `Enfant ${i + 1}: ${c.childNom} (id:${c.childId})
-- Solde compte: ${fmtMoney(c.soldeCompte)}
-- Solde tirelire: ${fmtMoney(c.soldeTirelire)}
-- 5 derniers paiements:
-${c.transactionsBlock}`;
-        })
-        .join("\n\n");
-    } else if (["Jeune"].includes(lc(role))) {
-      const data = await buildChildPayload(userId);
-      roleBlock = `Solde compte: ${fmtMoney(data.soldeCompte)}
-Solde tirelire: ${fmtMoney(data.soldeTirelire)}
-5 derniers paiements:
-${data.transactionsBlock}`;
-    }
-
-    // ── 3) Historique (5 derniers) ──────────────────────────────────────────────
+    // History (lightweight)
     let historyText = "";
     try {
       const rows = await ChatHistory.findAll({
@@ -363,8 +205,15 @@ ${data.transactionsBlock}`;
       console.error("Erreur historique:", e.message);
     }
 
-    // ── 4) Appel LLM avec votre SYSTEM_PROMPT existant ──────────────────────────
-    const system = SYSTEM_PROMPT(role, context, roleBlock);
+    // Use your SYSTEM_PROMPT + your front context, with tight guardrails
+    const system = SYSTEM_PROMPT(
+      role,
+      `${context}
+- Réponds strictement à partir des données fournies dans "Données ${role}". Si l'information manque, réponds : "Je ne sais pas".
+- Si la question est hors sujet, réponds brièvement dans la même langue et rappelle gentiment de rester sur Flexee Pay.`,
+      roleBlock
+    );
+
     const completePrompt = `${system}
 
 ${
@@ -378,11 +227,7 @@ Assistant:`;
       "Je n'ai pas pu générer de réponse. Veuillez réessayer.";
 
     try {
-      await ChatHistory.create({
-        userId,
-        userMessage: message,
-        aiResponse,
-      });
+      await ChatHistory.create({ userId, userMessage: message, aiResponse });
     } catch (e) {
       console.error("Erreur enregistrement:", e.message);
     }
@@ -391,7 +236,7 @@ Assistant:`;
       response: aiResponse,
       success: true,
       roleIncluded: Boolean(roleBlock),
-      source: "llm",
+      source: "facts-only",
     });
   } catch (error) {
     console.error("Erreur /ai-chat:", error);

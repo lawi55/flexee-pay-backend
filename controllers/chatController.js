@@ -206,7 +206,6 @@ exports.aiChat = async (req, res) => {
             userId,
             userMessage: message,
             aiResponse: quick,
-            context,
           });
         } catch {}
         return res
@@ -231,7 +230,6 @@ exports.aiChat = async (req, res) => {
             userId,
             userMessage: message,
             aiResponse: quick,
-            context,
           });
         } catch {}
         return res
@@ -259,7 +257,6 @@ exports.aiChat = async (req, res) => {
             userId,
             userMessage: message,
             aiResponse: quick,
-            context,
           });
         } catch {}
         return res
@@ -285,7 +282,6 @@ exports.aiChat = async (req, res) => {
             userId,
             userMessage: message,
             aiResponse: quick,
-            context,
           });
         } catch {}
         return res
@@ -317,7 +313,6 @@ exports.aiChat = async (req, res) => {
             userId,
             userMessage: message,
             aiResponse: quick,
-            context,
           });
         } catch {}
         return res
@@ -387,7 +382,6 @@ Assistant:`;
         userId,
         userMessage: message,
         aiResponse,
-        context,
       });
     } catch (e) {
       console.error("Erreur enregistrement:", e.message);

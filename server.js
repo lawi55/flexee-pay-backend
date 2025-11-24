@@ -67,7 +67,7 @@ app.use("/alimentation", alimentationRoutes);
 app.use("/chat", chatRoutes);
 app.use("/edu", EducationRoutes);
 app.use("/quiz", QuizRoutes);
-app.use('/edu/videos', financialVideoRoutes);
+app.use('/video/all', financialVideoRoutes);
 
 // Test route
 app.get("/", (req, res) => {

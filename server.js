@@ -25,6 +25,7 @@ const alimentationRoutes = require("./routes/alimentationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const EducationRoutes = require("./routes/financialEducationRoutes");
 const QuizRoutes = require("./routes/quizRoutes");
+const financialVideoRoutes = require('./routes/financialVideoRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -66,6 +67,7 @@ app.use("/alimentation", alimentationRoutes);
 app.use("/chat", chatRoutes);
 app.use("/edu", EducationRoutes);
 app.use("/quiz", QuizRoutes);
+app.use('/edu/videos', financialVideoRoutes);
 
 // Test route
 app.get("/", (req, res) => {
@@ -101,7 +103,7 @@ app.set("connectedUsers", connectedUsers);
 
 // Database sync
 sequelize
-  .sync({ alter: false })
+  .sync({ alter: true })
   .then(() => console.log("✅ Database synced successfully!"))
   .catch((err) => console.error("❌ Error syncing database:", err));
 

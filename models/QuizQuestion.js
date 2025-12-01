@@ -7,17 +7,9 @@ const QuizQuestion = sequelize.define('QuizQuestion', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  quizId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'quizzes',
-      key: 'id'
-    }
-  },
-  questionNumber: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
+  difficulty: {
+    type: DataTypes.ENUM('easy', 'medium', 'hard'),
+    allowNull: false
   },
   question: {
     type: DataTypes.TEXT,

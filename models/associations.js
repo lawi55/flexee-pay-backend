@@ -5,8 +5,7 @@ const Utilisateur = require("./Utilisateur");
 const Badge = require("./Badge");
 const FinancialEducation = require("./FinancialEducation");
 const FinancialSlide = require("./FinancialSlide");
-const Quiz = require("./Quiz");
-const QuizQuestion = require("./QuizQuestion");
+
 
 // Set up the many-to-many relationships
 Parent.belongsToMany(Jeune, {
@@ -30,16 +29,6 @@ FinancialEducation.hasMany(FinancialSlide, {
 FinancialSlide.belongsTo(FinancialEducation, {
   foreignKey: "educationId",
   as: "education",
-});
-Quiz.hasMany(QuizQuestion, {
-  foreignKey: "quizId",
-  as: "questions",
-  onDelete: "CASCADE",
-});
-
-QuizQuestion.belongsTo(Quiz, {
-  foreignKey: "quizId",
-  as: "quiz",
 });
 
 module.exports = { Parent, Jeune, ParentJeune, Utilisateur, Badge };

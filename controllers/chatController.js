@@ -32,7 +32,7 @@ Contexte: ${context}`;
 async function callHF(prompt) {
   const API_URL = "https://router.huggingface.co/v1/chat/completions";
   const modelId =
-    process.env.HF_MODEL_ID || "meta-llama/Llama-3.1-8B-Instruct:fireworks-ai";
+    process.env.HF_MODEL_ID || "meta-llama/Llama-3.1-8B-Instruct:novita";
   const token = process.env.HF_TOKEN;
 
   if (!token) throw new Error("HF_TOKEN missing in environment");
